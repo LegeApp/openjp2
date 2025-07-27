@@ -1,0 +1,54 @@
+[package]
+name = "openjp2"
+version = "0.5.3"
+authors = ["Robert G. Jakabosky <rjakabosky+neoawareness.com>"]
+license = "BSD-2-Clause"
+description = "Rust port of OpenJPEG."
+repository = "https://github.com/Neopallium/openjp2"
+homepage = "https://github.com/Neopallium/openjp2/tree/master/openjp2-rs"
+documentation = "https://docs.rs/openjp2"
+keywords = ["j2k", "jp2", "jpeg2000", "image"]
+edition = "2021"
+autobins = false
+
+exclude = ["CMakeLists.txt", "samples/*"]
+
+[lib]
+name = "openjp2"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+bitflags    = "1.3.2"
+byteorder   = { version = "1.5" }
+# Now defer PNG support to our own "png" feature
+image       = { version = "0.25", default-features = false }
+libc        = "0.2"
+log         = "0.4.27"
+sprintf     = "0.1.4"
+smallvec    = "1.15"
+clap        = { version = "4.5", features = ["derive"] }
+anyhow      = "1.0" # For easy error handling
+lopdf       = "0.31.0" # Match version used in pdf-processor or a compatible one
+imagequant = "4.4.1"
+
+[features]
+# default = std + file-io + png
+default  = ["std", "file-io", "png"]
+std      = ["log/std"]
+file-io  = []
+jpwl     = []
+jpspec   = []
+
+# enable PNG in the `image` crate
+png      = ["image/png"]
+
+[[bin]]
+name = "png2jp2"
+path = "src/main.rs"
+[[bin]]
+name = "openjp2_tester"
+path = "src/tester_main.rs"
+
+[[bin]]
+name = "quality_tester"
+path = "src/bin/quality_tester.rs"
