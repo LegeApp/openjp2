@@ -33,9 +33,6 @@
 
 use core::alloc::Layout;
 
-#[cfg(not(feature = "std"))]
-use alloc::vec::Vec;
-
 use super::c_api_types::*;
 use super::j2k::*;
 
@@ -291,7 +288,7 @@ impl opj_jp2_color {
     }
   }
 
-  pub fn icc_profile(&self) -> Option<ICCProfileRef> {
+  pub fn icc_profile(&self) -> Option<ICCProfileRef<'_>> {
     self.icc_profile.as_ref().map(|profile| match profile {
       ICCProfile::ICC(data) => ICCProfileRef::ICC(data),
       ICCProfile::CIELab(data) => ICCProfileRef::CIELab(data),
@@ -700,7 +697,7 @@ impl Default for opj_tcd_tile {
   }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct TileInfo {
   pub index: u32,
   pub data_size: Option<u32>,

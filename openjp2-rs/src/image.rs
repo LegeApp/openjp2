@@ -29,9 +29,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#[cfg(not(feature = "std"))]
-use alloc::boxed::Box;
-
 use super::math::*;
 use super::openjpeg::*;
 
@@ -123,6 +120,12 @@ impl opj_image_comp {
         true
       }
     }
+  }
+
+  pub fn move_data(&mut self, other: &mut opj_image_comp) {
+    self.clear_data();
+    self.data = other.data;
+    other.data = core::ptr::null_mut();
   }
 
   pub fn data(&self) -> Option<&[i32]> {
@@ -542,18 +545,14 @@ impl opj_image {
   }
 
   pub fn clear_comps(&mut self) {
-    unsafe {
-      if let Some(comps) = self.comps() {
-        /* image components */
-        for comp in comps {
-          if !comp.data.is_null() {
-            opj_image_data_free(comp.data as *mut core::ffi::c_void);
-          }
-        }
-        opj_free_type_array(self.comps, self.numcomps as usize);
-        self.comps = core::ptr::null_mut();
-        self.numcomps = 0;
+    if let Some(comps) = self.comps_mut() {
+      /* image components */
+      for comp in comps {
+        comp.clear_data();
       }
+      opj_free_type_array(self.comps, self.numcomps as usize);
+      self.comps = core::ptr::null_mut();
+      self.numcomps = 0;
     }
   }
 
@@ -562,6 +561,7 @@ impl opj_image {
     self.numcomps = numcomps;
     self.comps = opj_calloc_type_array(numcomps as usize);
     if self.comps.is_null() {
+      self.numcomps = 0;
       return false;
     }
     true

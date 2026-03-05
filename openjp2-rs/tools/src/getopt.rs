@@ -221,6 +221,8 @@ pub struct PositionalArg<V> {
   pub arg_count: usize,
   /// The value associated with this positional argument
   pub val: V,
+  /// Whether this positional argument is optional (default: false)
+  pub optional: bool,
 }
 
 impl<V> PositionalArg<V> {
@@ -245,6 +247,7 @@ impl<V> PositionalArg<V> {
       name: name.to_string(),
       arg_count: 1,
       val,
+      optional: false,
     }
   }
 
@@ -270,7 +273,17 @@ impl<V> PositionalArg<V> {
       name: name.to_string(),
       arg_count,
       val,
+      optional: false,
     }
+  }
+
+  /// Marks this positional argument as optional.
+  ///
+  /// By default, positional arguments are required. Calling this method
+  /// will make the argument optional.
+  pub fn optional(mut self) -> Self {
+    self.optional = true;
+    self
   }
 }
 
@@ -412,7 +425,7 @@ impl<V: Clone + fmt::Debug, P: Clone + fmt::Debug> GetOpts<V, P> {
   ///     }
   /// }
   /// ```
-  pub fn parse_args<T, I>(&self, args: I) -> GetOptsIterator<V, P>
+  pub fn parse_args<T, I>(&self, args: I) -> GetOptsIterator<'_, V, P>
   where
     T: Into<String>,
     I: IntoIterator<Item = T>,
@@ -457,6 +470,9 @@ impl<V: Clone + fmt::Debug, P: Clone + fmt::Debug> GetOpts<V, P> {
         }
       }
       if values.len() < pos_arg.arg_count {
+        if pos_arg.optional && values.is_empty() {
+          return None;
+        }
         return Some(ParsedOpt::ParseError(format!(
           "Expected {} arguments for {}",
           pos_arg.arg_count, pos_arg.name
@@ -671,7 +687,6 @@ mod tests {
 
     let parser = GetOpts::new(&opts);
     let parsed: Vec<_> = parser.parse_args(args).collect();
-    eprintln!("{:?}", parsed);
 
     assert_eq!(parsed.len(), 3);
     assert!(matches!(parsed[0], ParsedOpt::Program(ref s) if s == "prog"));
@@ -703,7 +718,6 @@ mod tests {
 
     let parser = GetOpts::new_with_positionals(&opts, &positionals);
     let parsed: Vec<_> = parser.parse_args(args).collect();
-    eprintln!("{:?}", parsed);
 
     assert_eq!(parsed.len(), 3);
     assert!(matches!(parsed[0], ParsedOpt::Program(ref s) if s == "prog"));
@@ -726,7 +740,6 @@ mod tests {
 
     let parser = GetOpts::new_with_positionals(&opts, &positionals);
     let parsed: Vec<_> = parser.parse_args(args).collect();
-    eprintln!("{:?}", parsed);
 
     assert_eq!(parsed.len(), 3);
     assert!(matches!(parsed[0], ParsedOpt::Program(ref s) if s == "prog"));
